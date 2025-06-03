@@ -1,0 +1,40 @@
+{
+ "name": "holo-card",
+ "version": "1.0.5",
+ "description": "A React component for holographic card effects",
+ "main": "dist/index.js",
+ "module": "dist/index.esm.js",
+ "types": "dist/index.d.ts",
+ "files": [
+  "dist"
+ ],
+ "scripts": {
+  "build": "rollup -c",
+  "prepare": "npm run build",
+  "prepublishOnly": "npm run build"
+ },
+ "peerDependencies": {
+  "@react-spring/web": "^10.0.1",
+  "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+  "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+ },
+ "devDependencies": {
+  "@rollup/plugin-commonjs": "^28.0.3",
+  "@rollup/plugin-node-resolve": "^16.0.1",
+  "@types/react": "^18.3.23",
+  "rollup": "^4.41.1",
+  "rollup-plugin-peer-deps-external": "^2.2.4",
+  "rollup-plugin-postcss": "^4.0.2",
+  "rollup-plugin-typescript2": "^0.36.0",
+  "typescript": "^4.9.5"
+ },
+ "keywords": [
+  "react",
+  "component",
+  "holographic",
+  "card",
+  "animation"
+ ],
+ "author": "BlueMadness",
+ "license": "MIT"
+}
