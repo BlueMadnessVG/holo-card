@@ -1,13 +1,13 @@
 import React, { useRef, useState } from "react";
 import { useHolographicEffect } from "../hooks/useHolographicEffect";
 import { animated } from "@react-spring/web";
-import "../styles/Card.css";
-import "../styles/Card_shiny.css";
-import "../styles/Card_Normal.css";
-import "../styles/Card_shiny_raycast.css";
-import "../styles/Card_Rainbow.css";
-import "../styles/Card_Radiant.css";
-import "../styles/Card_Glittery.css";
+import '../styles/Card.css';
+import '../styles/Card_Normal.css';
+import '../styles/Card_Radiant.css';
+import '../styles/Card_Rainbow.css';
+import '../styles/Card_Shiny.css';
+import '../styles/Card_Shiny_raycast.css';
+import '../styles/Card_Glittery.css';
 
 interface CardProps {
   img: string;
