@@ -8,6 +8,7 @@ A React component that creates stunning holographic card effects with multiple v
 - 🎮 Interactive hover/tilt effects
 - 📱 Mobile-responsive
 - 🎨 Customizable appearance
+
 - ⚡ Powered by React Spring for smooth animations
 
 ## 📦 Installation
@@ -105,7 +106,7 @@ function CustomCard() {
 
 ## 🎥 Demo
 
-![HoloCard Demo](https://i.imgur.com/0b86Xqo.gif)
+![uZR1Lg4](https://github.com/user-attachments/assets/4d4a03e0-1758-4c6d-8b16-fd9ca07c0241)
 
 *Demo showing the HoloCard in action*
 
