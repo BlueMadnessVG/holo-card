@@ -105,7 +105,9 @@ function CustomCard() {
 
 ## 🎥 Demo
 
-![HoloCard Demo](https://i.imgur.com/uZR1Lg4.gif)
+![HoloCard Demo](https://i.imgur.com/0b86Xqo.gif)
+
+*Demo showing the HoloCard in action*
 
 ## 🪝 Hook API
 
