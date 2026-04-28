@@ -1,15 +1,8 @@
-import React from "react";
-export declare function useHolographicEffect(_showcase?: boolean): {
-    isMobile: boolean;
-    isActive: boolean;
-    isInteracting: boolean;
-    isLoading: boolean;
-    setIsActive: React.Dispatch<React.SetStateAction<boolean>>;
-    setIsLoading: React.Dispatch<React.SetStateAction<boolean>>;
-    handleInteract: (e: React.MouseEvent) => void;
-    handleInteractEnd: (delay?: number) => void;
-    retreat: () => void;
-    springStyle: React.CSSProperties & {
-        [key: string]: any;
-    };
-};
+import type { HolographicEffectState } from "../types";
+/**
+ * Manages all reactive state and spring animations for the holographic card
+ * effect. Returns everything needed to wire up a card element.
+ *
+ * @param showcase - Reserved for future auto-cycle / showcase mode.
+ */
+export declare function useHolographicEffect(_showcase?: boolean): HolographicEffectState;

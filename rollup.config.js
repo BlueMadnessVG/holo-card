@@ -1,9 +1,10 @@
-import typescript from "rollup-plugin-typescript2";
+import typescript from "@rollup/plugin-typescript";
 import postcss from "rollup-plugin-postcss";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import terser from "@rollup/plugin-terser";
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
+import typescriptEngine from "typescript";
 import copy from "rollup-plugin-copy";
 
 const isProd = process.env.NODE_ENV === "production";
@@ -13,16 +14,13 @@ export default {
   input: "src/index.ts",
 
   output: [
-    // CommonJS — for Node / older bundlers
     {
       file: "dist/index.js",
       format: "cjs",
       sourcemap: true,
       exports: "named",
-      // Preserve JSX runtime interop for CJS consumers
       interop: "auto",
     },
-    // ES Module — for modern bundlers (tree-shakeable)
     {
       file: "dist/index.esm.js",
       format: "esm",
@@ -30,46 +28,45 @@ export default {
     },
   ],
 
-  // Don't bundle peer deps or React internals
   external: ["react", "react/jsx-runtime", "react-dom", "@react-spring/web"],
 
-  plugins: [
-    // Mark peer deps external automatically
+ plugins: [
+    // 1. Externalize peer deps first so they aren't bundled
     peerDepsExternal(),
+    resolve({ extensions: [".ts", ".tsx", ".js", ".jsx", ".json"] }),
 
-    // Resolve node_modules (needed for any non-peer deps)
-    resolve({ extensions: [".ts", ".tsx", ".js"] }),
-
-    // CJS → ESM interop
-    commonjs({ include: /node_modules/ }),
-
-    // Copy raw CSS files to dist/styles so consumers can import them à la carte
-    copy({
-      targets: [{ src: "src/styles/*.css", dest: "dist/styles" }],
-      hook: "buildStart", // run before the build so postcss can also pick them up
+    // 2. TypeScript MUST be first so it can strip 'import type' and transpile JSX
+    // before the rest of the pipeline sees the code.
+    typescript({
+        tsconfig: "./tsconfig.json",
+        // These options ensure your declarations still end up in dist
+        declaration: true,
+        declarationDir: "dist/types",
+        rootDir: "src",
+        // This helps Rollup 4 understand how to handle the transformation
+        sourceMap: true,
+        inlineSources: true,
     }),
 
-    // Process CSS imports inside component files (inject into JS bundle)
+    // 3. Now that it's JS, resolve node_modules and convert CJS
+    commonjs(),
+
+    // 4. Handle assets and styles
+    copy({
+      targets: [{ src: "src/styles/*.css", dest: "dist/styles" }],
+    }),
+
     postcss({
-      extract: false,
-      modules: false,
+      extract: true, // Recommended for libraries
       minimize: isProd,
-      inject: true,
-      use: { sass: null, stylus: null, less: null },
+      inject: false,
       config: false,
     }),
 
-    // TypeScript
-    typescript({
-      useTsconfigDeclarationDir: true,
-      tsconfig: "./tsconfig.json",
-      clean: true,
-    }),
-
-    // Minify only in production
+    // 5. Minify last
     isProd && terser({
       compress: {
-        passes: 2,          // extra optimisation pass
+        passes: 2,
         pure_getters: true,
       },
       format: { comments: false },

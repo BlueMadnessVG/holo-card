@@ -1,4 +1,3 @@
-/// <reference types="react" />
 export type HoloStyle = "Shiny" | "Shiny_raycast" | "Normal" | "Vibrant" | "Radiant" | "Glittery" | "Disable";
 export interface SpringConfig {
     stiffness: number;
