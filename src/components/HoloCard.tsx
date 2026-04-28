@@ -1,44 +1,49 @@
-import React, { useRef, useState } from "react";
-import { useHolographicEffect } from "../hooks/useHolographicEffect";
 import { animated } from "@react-spring/web";
-import '../styles/Card.css';
-import '../styles/Card_Normal.css';
-import '../styles/Card_Radiant.css';
-import '../styles/Card_Rainbow.css';
-import '../styles/Card_Shiny.css';
-import '../styles/Card_Shiny_raycast.css';
-import '../styles/Card_Glittery.css';
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { useHolographicEffect } from "../hooks/useHolographicEffect";
+import type { HoloCardProps } from "../types";
 
-interface CardProps {
-  img: string;
-  radius?: number | string;
-  foil?: string;
-  mask?: string;
-  enableEffect?: boolean;
-  data_set?:
-    | "Shiny"
-    | "Shiny_raycast"
-    | "Normal"
-    | "Vibrant"
-    | "Radiant"
-    | "Glittery"
-    | "Disable";
-}
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
+/** Convert a radius prop value to a CSS string */
+const toRadiusCSS = (radius: number | string): string =>
+  typeof radius === "number" ? `${radius}px` : radius;
+
+/**
+ * Generate stable random seed values for CSS shimmer positioning.
+ * Using `useRef` so they never cause a re-render.
+ */
+const useStableSeeds = () =>
+  useRef({
+    seedX: Math.random(),
+    seedY: Math.random(),
+  }).current;
+
+// ─── Component ────────────────────────────────────────────────────────────────
+
+/**
+ * `HoloCard` renders a holographic trading-card style component with tilt,
+ * glare, and shine effects driven by react-spring.
+ *
+ * @example
+ * ```tsx
+ * <HoloCard img="/cards/charizard.jpg" dataSet="Shiny" />
+ * ```
+ */
 export function HoloCard({
   img,
+  alt = "Holographic card",
   radius,
   foil = "",
   mask = "",
-  data_set = "Normal",
+  dataSet = "Normal",
   enableEffect = true,
-}: CardProps) {
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [randomSeed] = useState({ x: Math.random(), y: Math.random() });
-  const [cosmosPosition] = useState({
-    x: Math.floor(randomSeed.x * 734),
-    y: Math.floor(randomSeed.y * 1280),
-  });
+  onLoad,
+}: HoloCardProps) {
+  const { seedX, seedY } = useStableSeeds();
+  const cosmosX = Math.floor(seedX * 734);
+  const cosmosY = Math.floor(seedY * 1280);
+
   const [foilStyles, setFoilStyles] = useState<Record<string, string>>({});
 
   const {
@@ -49,9 +54,48 @@ export function HoloCard({
     handleInteract,
     handleInteractEnd,
     springStyle,
-  } = useHolographicEffect(false);
+  } = useHolographicEffect();
 
-  const handleImageLoad = () => {
+  // ── Derived / memoised values ──────────────────────────────────────────────
+
+  /**
+   * Static CSS custom properties. These never change after mount so memo
+   * prevents them from being recalculated on every render.
+   */
+  const staticStyles = useMemo<React.CSSProperties & Record<string, unknown>>(
+    () => ({
+      "--seedx":     seedX,
+      "--seedy":     seedY,
+      "--cosmosbg":  `${cosmosX}px ${cosmosY}px`,
+    }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [] // seeds never change
+  );
+
+  const combinedCardStyles = useMemo(
+    () => ({ ...staticStyles, ...foilStyles }),
+    [staticStyles, foilStyles]
+  );
+
+  const outerStyle = useMemo(
+    () => ({
+      ...springStyle,
+      ...(radius !== undefined && { "--card-radius": toRadiusCSS(radius) }),
+    }),
+    [springStyle, radius]
+  );
+
+  const cardClasses = useMemo(
+    () =>
+      ["card", "interactive", isActive && "active", isInteracting && "interacting", mask && "masked"]
+        .filter(Boolean)
+        .join(" "),
+    [isActive, isInteracting, mask]
+  );
+
+  // ── Callbacks ──────────────────────────────────────────────────────────────
+
+  const handleImageLoad = useCallback(() => {
     setIsLoading(false);
     if (mask || foil) {
       setFoilStyles({
@@ -59,63 +103,44 @@ export function HoloCard({
         "--foil": `url(${foil})`,
       });
     }
-  };
+    onLoad?.();
+  }, [foil, mask, onLoad, setIsLoading]);
 
-  const staticStyles: React.CSSProperties & Record<string, string | number> = {
-    "--seedx": randomSeed.x,
-    "--seedy": randomSeed.y,
-    "--cosmosbg": `${cosmosPosition.x}px ${cosmosPosition.y}px`,
-  };
-
-  const combinedStyles = {
-    ...staticStyles,
-    ...foilStyles,
-  };
-
-  const handleActive = () => {
+  const handleToggleActive = useCallback(() => {
     setIsActive(!isActive);
-  };
+  }, [isActive, setIsActive]);
 
-  const cardClasses = [
-    "card",
-    "interactive",
-    isActive ? "active" : "",
-    isInteracting ? "interacting" : "",
-    mask ? "masked" : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const handleMouseLeave = useCallback(() => {
+    handleInteractEnd();
+  }, [handleInteractEnd]);
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
     <animated.div
-      ref={cardRef}
       className={cardClasses}
-      style={{
-        ...springStyle,
-        ...(radius !== undefined && {
-          "--card-radius": typeof radius === "number" ? `${radius}px` : radius,
-        }),
-      }}
-      data-set={data_set}
+      style={outerStyle as  React.CSSProperties}
+      data-set={dataSet}
     >
-      <div className={"card_translater"}>
+      <div className="card_translater">
         <animated.button
-          className={"card_rotator"}
-          onClick={handleActive}
+          className="card_rotator"
+          onClick={handleToggleActive}
           onMouseMove={enableEffect ? handleInteract : undefined}
-          onMouseLeave={enableEffect ? () => handleInteractEnd() : undefined}
-          aria-label="Interactive card"
-          tabIndex={0}
+          onMouseLeave={enableEffect ? handleMouseLeave : undefined}
+          aria-label="Interactive holographic card"
+          aria-pressed={isActive}
         >
-          <div className={"card_front"} style={combinedStyles}>
+          <div className="card_front" style={combinedCardStyles}>
             <img
               src={img}
-              alt="img alt"
+              alt={alt}
               onLoad={handleImageLoad}
               loading="lazy"
+              draggable={false}
             />
-            <div className={"card_shine"} />
-            <div className={"card_glare"} />
+            <div className="card_shine" aria-hidden="true" />
+            <div className="card_glare" aria-hidden="true" />
           </div>
         </animated.button>
       </div>

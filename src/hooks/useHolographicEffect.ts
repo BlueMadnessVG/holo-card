@@ -1,157 +1,131 @@
 import { to, useSpring } from "@react-spring/web";
-import React, { CSSProperties, useEffect, useState } from "react";
-import { adjust, clamp, round } from "../helpers/Math";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import { adjust, clamp, distanceFromCenter, round } from "../helpers/Math";
+import type { HolographicEffectState, SpringConfig } from "../types";
 
-/* interface HolographicEffectState {
-  isMobile: boolean;
-} */
+// ─── Spring presets ───────────────────────────────────────────────────────────
 
-interface SpringSettings {
-  stiffness: number;
-  damping: number;
-}
+const SPRING_INTERACT: SpringConfig = { stiffness: 0.066, damping: 0.25 };
+const SPRING_POPOVER: SpringConfig  = { stiffness: 0.033, damping: 0.45 };
+const SPRING_SNAP: SpringConfig     = { stiffness: 0.01,  damping: 0.06 };
 
-export function useHolographicEffect(_showcase = false) {
-  const [isMobile, setIsMobile] = useState<boolean>(false);
-  const [isActive, setIsActive] = useState<boolean>(false);
-  const [isInteracting, setIsInteracting] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isVisible, setIsVisible] = useState<boolean>(true);
+// ─── Defaults ─────────────────────────────────────────────────────────────────
 
-  const springInteractSetting: SpringSettings = {
-    stiffness: 0.066,
-    damping: 0.25,
-  };
-  const springPopoverSetting: SpringSettings = {
-    stiffness: 0.033,
-    damping: 0.45,
-  };
+const DEFAULT_ROTATE    = { x: 0,  y: 0  };
+const DEFAULT_GLARE     = { x: 50, y: 50, o: 0 };
+const DEFAULT_BACKGROUND = { x: 50, y: 50 };
 
-  const [springRotate, setSpringRotate] = useSpring(() => ({
-    from: { x: 0, y: 0 },
-    config: springInteractSetting,
-  }));
+// ─── Mobile detection (pointer, not UA sniffing) ─────────────────────────────
 
-  const [springGlare, setSpringGlare] = useSpring(() => ({
-    from: { x: 50, y: 50, o: 0 },
-    config: springInteractSetting,
-  }));
+const detectMobile = (): boolean =>
+  typeof window !== "undefined" &&
+  window.matchMedia("(pointer: coarse)").matches;
 
-  const [springBackground, setSpringBackground] = useSpring(() => ({
-    x: 50,
-    y: 50,
-    config: springInteractSetting,
-  }));
+// ─── Hook ─────────────────────────────────────────────────────────────────────
 
-  const [springRotateDelta, setSpringRotateDelta] = useSpring(() => ({
-    x: 0,
-    y: 0,
-    config: springPopoverSetting,
-  }));
+/**
+ * Manages all reactive state and spring animations for the holographic card
+ * effect. Returns everything needed to wire up a card element.
+ *
+ * @param showcase - Reserved for future auto-cycle / showcase mode.
+ */
+export function useHolographicEffect(_showcase = false): HolographicEffectState {
+  const [isMobile]      = useState<boolean>(detectMobile);
+  const [isActive,      setIsActive]      = useState(false);
+  const [isInteracting, setIsInteracting] = useState(false);
+  const [isLoading,     setIsLoading]     = useState(true);
 
-  const updateSprings = (
-    background: { x: number; y: number },
-    rotate: { x: number; y: number },
-    glare: { x: number; y: number; o: number }
-  ) => {
-    setSpringBackground(background);
-    setSpringRotate(rotate);
-    setSpringGlare(glare);
-  };
+  // Track visibility to pause animations when the tab is hidden.
+  const isVisible = useRef(
+    typeof document !== "undefined"
+      ? document.visibilityState === "visible"
+      : true
+  );
 
-  const handleInteract = (e: React.MouseEvent) => {
-    if (!isVisible || isMobile) return;
+  // ── Springs ────────────────────────────────────────────────────────────────
 
-    setIsInteracting(true);
+  const [springRotate,      setSpringRotate]      = useSpring(() => ({ from: DEFAULT_ROTATE,     config: SPRING_INTERACT }));
+  const [springGlare,       setSpringGlare]       = useSpring(() => ({ from: DEFAULT_GLARE,      config: SPRING_INTERACT }));
+  const [springBackground,  setSpringBackground]  = useSpring(() => ({ ...DEFAULT_BACKGROUND,    config: SPRING_INTERACT }));
+  const [springRotateDelta, setSpringRotateDelta] = useSpring(() => ({ x: 0, y: 0,               config: SPRING_POPOVER  }));
 
-    const clientX = e.clientX;
-    const clientY = e.clientY;
+  // ── Handlers ───────────────────────────────────────────────────────────────
+
+  const snapToRest = useCallback((delay = 500) => {
+    const id = setTimeout(() => {
+      setIsInteracting(false);
+      setSpringRotate    ({ ...DEFAULT_ROTATE,      config: SPRING_SNAP });
+      setSpringGlare     ({ ...DEFAULT_GLARE,       config: SPRING_SNAP });
+      setSpringBackground({ ...DEFAULT_BACKGROUND,  config: SPRING_SNAP });
+    }, delay);
+    return id;
+  }, [setSpringBackground, setSpringGlare, setSpringRotate]);
+
+  const retreat = useCallback(() => {
+    setSpringRotateDelta({ x: 0, y: 0 });
+    snapToRest(100);
+  }, [setSpringRotateDelta, snapToRest]);
+
+  const handleInteract = useCallback((e: React.MouseEvent<Element>) => {
+    if (!isVisible.current || isMobile) return;
+
     const target = e.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-
-    const absolute = {
-      x: clientX - rect.left,
-      y: clientY - rect.top,
-    };
+    const rect   = target.getBoundingClientRect();
 
     const percent = {
-      x: clamp(round((100 / rect.width) * absolute.x)),
-      y: clamp(round((100 / rect.height) * absolute.y)),
+      x: clamp(round((100 / rect.width)  * (e.clientX - rect.left))),
+      y: clamp(round((100 / rect.height) * (e.clientY - rect.top))),
     };
 
-    const center = {
-      x: percent.x - 50,
-      y: percent.y - 50,
-    };
+    const center = { x: percent.x - 50, y: percent.y - 50 };
 
-    updateSprings(
-      {
-        x: adjust(percent.x, 0, 100, 37, 63),
-        y: adjust(percent.y, 0, 100, 33, 67),
-      },
-      {
-        x: round(-(center.x / 3.5)),
-        y: round(center.y / 2),
-      },
-      {
-        x: round(percent.x),
-        y: round(percent.y),
-        o: 1,
-      }
-    );
-  };
+    setIsInteracting(true);
+    setSpringBackground({
+      x: adjust(percent.x, 0, 100, 37, 63),
+      y: adjust(percent.y, 0, 100, 33, 67),
+    });
+    setSpringRotate({
+      x: round(-(center.x / 3.5)),
+      y: round(center.y / 2),
+    });
+    setSpringGlare({
+      x: round(percent.x),
+      y: round(percent.y),
+      o: 1,
+    });
+  }, [isMobile, setSpringBackground, setSpringRotate, setSpringGlare]);
 
-  const handleInteractEnd = (delay: number = 500) => {
-    setTimeout(() => {
-      const snapSetting = { stiffness: 0.01, damping: 0.06 };
+  const handleInteractEnd = useCallback((delay = 500) => {
+    snapToRest(delay);
+  }, [snapToRest]);
 
-      setIsInteracting(false);
-
-      setSpringRotate({ x: 0, y: 0, config: snapSetting });
-      setSpringGlare({ x: 50, y: 50, o: 0, config: snapSetting });
-      setSpringBackground({ x: 50, y: 50, config: snapSetting });
-    }, delay);
-  };
-
-  const retreat = () => {
-    setSpringRotateDelta({ x: 0, y: 0 });
-    handleInteractEnd(100);
-  };
+  // ── Visibility listener ────────────────────────────────────────────────────
 
   useEffect(() => {
-    setIsMobile(/Mobi|Android/i.test(navigator.userAgent));
-    setIsVisible(document.visibilityState === "visible");
+    if (typeof document === "undefined") return;
 
-    const handleVisibilityChange = () => {
-      setIsVisible(document.visibilityState === "visible");
-      retreat();
+    const onVisibilityChange = () => {
+      isVisible.current = document.visibilityState === "visible";
+      if (!isVisible.current) retreat();
     };
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, []);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [retreat]);
 
-  const springStyle: CSSProperties & { [key: string]: any } = {
-    "--pointer-x": to(springGlare.x, (x) => `${x}%`),
-    "--pointer-y": to(springGlare.y, (y) => `${y}%`),
-    "--pointer-from-center": to([springGlare.x, springGlare.y], (x, y) =>
-      clamp(Math.sqrt((y - 50) ** 2 + (x - 50) ** 2) / 50, 0, 1)
-    ),
-    "--pointer-from-top": to(springGlare.y, (y) => y / 100),
-    "--pointer-from-left": to(springGlare.x, (x) => x / 100),
-    "--card-opacity": springGlare.o,
-    "--rotate-x": to(
-      [springRotate.x, springRotateDelta.x],
-      (x, dx) => `${x + dx}deg`
-    ),
-    "--rotate-y": to(
-      [springRotate.y, springRotateDelta.y],
-      (y, dy) => `${y + dy}deg`
-    ),
-    "--background-x": to(springBackground.x, (x) => `${x}%`),
-    "--background-y": to(springBackground.y, (y) => `${y}%`),
+  // ── Spring style map (CSS custom properties) ───────────────────────────────
+
+  const springStyle: Record<string, unknown> = {
+    "--pointer-x":            to(springGlare.x, (x) => `${x}%`),
+    "--pointer-y":            to(springGlare.y, (y) => `${y}%`),
+    "--pointer-from-center":  to([springGlare.x, springGlare.y], distanceFromCenter),
+    "--pointer-from-top":     to(springGlare.y, (y) => y / 100),
+    "--pointer-from-left":    to(springGlare.x, (x) => x / 100),
+    "--card-opacity":         springGlare.o,
+    "--rotate-x":             to([springRotate.x, springRotateDelta.x], (x, dx) => `${x + dx}deg`),
+    "--rotate-y":             to([springRotate.y, springRotateDelta.y], (y, dy) => `${y + dy}deg`),
+    "--background-x":         to(springBackground.x, (x) => `${x}%`),
+    "--background-y":         to(springBackground.y, (y) => `${y}%`),
   };
 
   return {

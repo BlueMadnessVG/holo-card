@@ -1,14 +1,31 @@
-// * return a value that has been rounded to a set precision
-const round = (value: number, precision: number = 3) => parseFloat(value.toFixed(precision));
+/**
+ * Round `value` to `precision` decimal places.
+ * @default precision = 3
+ */
+export const round = (value: number, precision = 3): number =>
+  parseFloat(value.toFixed(precision));
 
-//  *Return a value that has been limited between min & max
-const clamp = (value: number, min: number = 0, max: number = 100) => {
-    return Math.min(Math.max(value, min), max);
-}
+/**
+ * Clamp `value` to the range [min, max].
+ * @default min = 0, max = 100
+ */
+export const clamp = (value: number, min = 0, max = 100): number =>
+  Math.min(Math.max(value, min), max);
 
-// * return a value that has been re-mapped according to the from/to
-const adjust = (value: number, fromMin: number, fromMax: number, toMin: number, toMax: number) => {
-    return round(toMin + (toMax - toMin) * (value - fromMin) / (fromMax - fromMin));
-}
+/**
+ * Re-map `value` from [fromMin, fromMax] onto [toMin, toMax].
+ */
+export const adjust = (
+  value: number,
+  fromMin: number,
+  fromMax: number,
+  toMin: number,
+  toMax: number
+): number => round(toMin + ((toMax - toMin) * (value - fromMin)) / (fromMax - fromMin));
 
-export { round, clamp, adjust }
+/**
+ * Euclidean distance between a point and the centre (50, 50),
+ * normalised to [0, 1].
+ */
+export const distanceFromCenter = (x: number, y: number): number =>
+  clamp(Math.sqrt((y - 50) ** 2 + (x - 50) ** 2) / 50, 0, 1);

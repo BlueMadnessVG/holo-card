@@ -1,50 +1,64 @@
 {
   "name": "holo-card",
-  "version": "1.0.7",
-  "description": "A React component for holographic card effects",
+  "version": "1.1.0",
+  "description": "A React component for holographic card effects with tilt, glare, and shine animations",
+  "keywords": [
+    "react",
+    "component",
+    "holographic",
+    "card",
+    "animation",
+    "spring",
+    "holo",
+    "foil"
+  ],
+  "author": "BlueMadness",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BlueMadnessVG/holo-card"
+  },
+  "sideEffects": false,
   "main": "dist/index.js",
   "module": "dist/index.esm.js",
   "types": "dist/index.d.ts",
-  "style": "dist/styles/Card.css",
+  "exports": {
+    ".": {
+      "import": "./dist/index.esm.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./styles/*": "./dist/styles/*"
+  },
   "files": [
     "dist",
     "src/styles"
   ],
   "scripts": {
-    "build": "rollup -c",
-    "prepare": "npm run build",
-    "watch": "rollup -c -w"
+    "build": "NODE_ENV=production rollup -c",
+    "dev": "rollup -c -w",
+    "prepare": "npm run build"
   },
   "peerDependencies": {
-    "@react-spring/web": "^10.0.1",
-    "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
-    "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0"
+    "@react-spring/web": ">=10.0.0",
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
   },
   "devDependencies": {
     "@rollup/plugin-commonjs": "^28.0.3",
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
-    "@rollup/plugin-url": "^8.0.2",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
     "cssnano": "^7.0.7",
     "postcss": "^8.5.4",
     "postcss-import": "^16.1.0",
     "postcss-preset-env": "^10.2.0",
-    "rollup": "^2.70.0",
+    "rollup": "^4.60.2",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
     "rollup-plugin-postcss": "^4.0.2",
     "rollup-plugin-typescript2": "^0.31.2",
-    "typescript": "^4.6.0"
-  },
-  "keywords": [
-    "react",
-    "component",
-    "holographic",
-    "card",
-    "animation"
-  ],
-  "author": "BlueMadness",
-  "license": "MIT"
+    "typescript": "^6.0.3"
+  }
 }

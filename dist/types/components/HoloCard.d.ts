@@ -1,17 +1,11 @@
-import '../styles/Card.css';
-import '../styles/Card_Normal.css';
-import '../styles/Card_Radiant.css';
-import '../styles/Card_Rainbow.css';
-import '../styles/Card_Shiny.css';
-import '../styles/Card_Shiny_raycast.css';
-import '../styles/Card_Glittery.css';
-interface CardProps {
-    img: string;
-    radius?: number | string;
-    foil?: string;
-    mask?: string;
-    enableEffect?: boolean;
-    data_set?: "Shiny" | "Shiny_raycast" | "Normal" | "Vibrant" | "Radiant" | "Glittery" | "Disable";
-}
-export declare function HoloCard({ img, radius, foil, mask, data_set, enableEffect, }: CardProps): import("react/jsx-runtime").JSX.Element;
-export {};
+import type { HoloCardProps } from "../types";
+/**
+ * `HoloCard` renders a holographic trading-card style component with tilt,
+ * glare, and shine effects driven by react-spring.
+ *
+ * @example
+ * ```tsx
+ * <HoloCard img="/cards/charizard.jpg" dataSet="Shiny" />
+ * ```
+ */
+export declare function HoloCard({ img, alt, radius, foil, mask, dataSet, enableEffect, onLoad, }: HoloCardProps): import("react/jsx-runtime").JSX.Element;
