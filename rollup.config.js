@@ -1,15 +1,62 @@
-import typescript from "@rollup/plugin-typescript";
+import typescript from "rollup-plugin-typescript2";
 import postcss from "rollup-plugin-postcss";
 import peerDepsExternal from "rollup-plugin-peer-deps-external";
 import terser from "@rollup/plugin-terser";
 import commonjs from "@rollup/plugin-commonjs";
 import resolve from "@rollup/plugin-node-resolve";
-import typescriptEngine from "typescript";
 import copy from "rollup-plugin-copy";
 
 const isProd = process.env.NODE_ENV === "production";
 
-/** @type {import('rollup').RollupOptions} */
+// Custom plugin — takes the extracted CSS and injects it as a
+// self-executing style tag when the JS bundle is first imported.
+function injectCssPlugin() {
+  return {
+    name: "inject-css",
+    generateBundle(_, bundle) {
+      // Find the extracted CSS file in the bundle
+      const cssFile = Object.values(bundle).find(
+        (file) => file.type === "asset" && file.fileName.endsWith(".css")
+      );
+      if (!cssFile) return;
+
+      const cssContent = cssFile.source
+        .toString()
+        .replace(/\\/g, "\\\\")
+        .replace(/`/g, "\\`");
+
+      // Prepend the injector to the ESM output
+      const esmBundle = bundle["index.esm.js"];
+      if (esmBundle && esmBundle.type === "chunk") {
+        esmBundle.code =
+          `(function(){if(typeof document==="undefined")return;` +
+          `var id="holo-card-styles";` +
+          `if(document.getElementById(id))return;` +
+          `var s=document.createElement("style");` +
+          `s.id=id;s.textContent=\`${cssContent}\`;` +
+          `document.head.appendChild(s);})();\n` +
+          esmBundle.code;
+      }
+
+      // Do the same for the CJS output
+      const cjsBundle = bundle["index.js"];
+      if (cjsBundle && cjsBundle.type === "chunk") {
+        cjsBundle.code =
+          `(function(){if(typeof document==="undefined")return;` +
+          `var id="holo-card-styles";` +
+          `if(document.getElementById(id))return;` +
+          `var s=document.createElement("style");` +
+          `s.id=id;s.textContent=\`${cssContent}\`;` +
+          `document.head.appendChild(s);})();\n` +
+          cjsBundle.code;
+      }
+
+      // Remove the CSS file from the bundle output — it's now inlined
+      delete bundle[cssFile.fileName];
+    },
+  };
+}
+
 export default {
   input: "src/index.ts",
 
@@ -28,47 +75,40 @@ export default {
     },
   ],
 
-  external: ["react", "react/jsx-runtime", "react-dom", "@react-spring/web"],
+  external: ["react", "react/jsx-runtime", "react-dom", "framer-motion"],
 
- plugins: [
-    // 1. Externalize peer deps first so they aren't bundled
+  plugins: [
     peerDepsExternal(),
     resolve({ extensions: [".ts", ".tsx", ".js", ".jsx", ".json"] }),
 
-    // 2. TypeScript MUST be first so it can strip 'import type' and transpile JSX
-    // before the rest of the pipeline sees the code.
-    typescript({
-        tsconfig: "./tsconfig.json",
-        // These options ensure your declarations still end up in dist
-        declaration: true,
-        declarationDir: "dist/types",
-        rootDir: "src",
-        // This helps Rollup 4 understand how to handle the transformation
-        sourceMap: true,
-        inlineSources: true,
+    // Extract all CSS to a single file first
+    postcss({
+      extract: "dist/holo-card.css", // extract to a temp file
+      inject: false,
+      minimize: isProd,
+      modules: false,
+      use: { sass: null, stylus: null, less: null },
+      config: false,
     }),
 
-    // 3. Now that it's JS, resolve node_modules and convert CJS
+    typescript({
+      useTsconfigDeclarationDir: true,
+      tsconfig: "./tsconfig.json",
+      sourceMap: true,
+      inlineSources: true,
+    }),
+
     commonjs(),
 
-    // 4. Handle assets and styles
     copy({
       targets: [{ src: "src/styles/*.css", dest: "dist/styles" }],
     }),
 
-    postcss({
-      extract: true, // Recommended for libraries
-      minimize: isProd,
-      inject: false,
-      config: false,
-    }),
+    // Inject the extracted CSS into the JS bundle
+    injectCssPlugin(),
 
-    // 5. Minify last
     isProd && terser({
-      compress: {
-        passes: 2,
-        pure_getters: true,
-      },
+      compress: { passes: 2, pure_getters: true },
       format: { comments: false },
     }),
   ].filter(Boolean),

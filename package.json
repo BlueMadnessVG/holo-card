@@ -1,7 +1,7 @@
 {
   "name": "holo-card",
   "type": "module",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A React component for holographic card effects with tilt, glare, and shine animations",
   "keywords": [
     "react",
@@ -41,7 +41,6 @@
     "prepare": "npm run build"
   },
   "peerDependencies": {
-    "@react-spring/web": ">=10.0.0",
     "react": ">=16.8.0",
     "react-dom": ">=16.8.0"
   },
@@ -60,11 +59,13 @@
     "rollup": "^4.60.2",
     "rollup-plugin-copy": "^3.5.0",
     "rollup-plugin-peer-deps-external": "^2.2.4",
-    "rollup-plugin-postcss": "^4.0.2",
+    "rollup-plugin-typescript2": "^0.37.0",
     "tslib": "^2.8.1",
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "holo-card": "."
+    "framer-motion": "^12.38.0",
+    "holo-card": "file:.yalc/holo-card",
+    "rollup-plugin-postcss": "^4.0.2"
   }
 }

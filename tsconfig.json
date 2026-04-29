@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "ES2018", 
+    "target": "ES2018",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
@@ -9,16 +9,16 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "esnext",
-    "moduleResolution": "bundler", 
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": false,
     "jsx": "react-jsx",
     "declaration": true,
+    "declarationDir": "dist",
     "outDir": "dist",
-    "declarationDir": "dist/types",
-    "rootDir": "src" 
+    "rootDir": "src"
   },
-  "include": ["src"],
+  "include": ["src", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 }
