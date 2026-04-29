@@ -1,11 +1,18 @@
 import type { HoloCardProps } from "../types";
 /**
- * `HoloCard` renders a holographic trading-card style component with tilt,
- * glare, and shine effects driven by react-spring.
+ * `HoloCard` is the batteries-included component — image in, holographic card out.
  *
- * @example
+ * For custom layouts, use `HoloCardRoot` instead and put your own children inside.
+ *
  * ```tsx
- * <HoloCard img="/cards/charizard.jpg" dataSet="Shiny" />
+ * // Simple usage
+ * <HoloCard img="/cards/pikachu.jpg" dataSet="Shiny" />
+ *
+ * // Custom layout
+ * <HoloCardRoot dataSet="Shiny">
+ *   <GameCardPoster src={game.coverUrl} />
+ *   <GameCardHUD title={game.title} />
+ * </HoloCardRoot>
  * ```
  */
 export declare function HoloCard({ img, alt, radius, foil, mask, dataSet, enableEffect, onLoad, }: HoloCardProps): import("react/jsx-runtime").JSX.Element;

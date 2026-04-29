@@ -181,7 +181,9 @@ button.card_rotator {
     0 0 40px -30px var(--card-glow), 0 0 50px -20px var(--card-glow);
 }
 
-.card_rotator * {
+.card_rotator .card_shine,
+.card_rotator .card_glare,
+.card_rotator .card_back {
   width: 100%;
   display: grid;
   grid-area: 1/1;
@@ -192,6 +194,18 @@ button.card_rotator {
   transform-style: preserve-3d;
   pointer-events: none;
   overflow: hidden;
+}
+
+.card_rotator .card_front {
+  width: 100%;
+  grid-area: 1/1;
+  aspect-ratio: var(--card-aspect);
+  border-radius: var(--card-radius);
+  -webkit-transform-style: preserve-3d;
+  transform-style: preserve-3d;
+  pointer-events: none;
+  overflow: hidden;
+  /* NO display:grid here — lets children use position:absolute normally */
 }
 
 .card_rotator img {
