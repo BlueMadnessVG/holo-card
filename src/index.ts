@@ -1,3 +1,14 @@
-export { HoloCard } from "./components/HoloCard";
+/* ────────────  Components ──────────── */
+export { HoloCard }     from "./components/HoloCard";
 export { HoloCardRoot } from "./components/HoloCardRoot";
-export { useHolographicEffect } from "./hooks/useHolographicEffect"
+
+/* ──────────── Hooks ──────────── */
+export { useHolographicEffect } from "./hooks/useHolographicEffect";
+
+/* ──────────── Types ──────────── */
+export type { HoloStyle }                from "./types";
+export type { HoloCardProps }            from "./types";
+export type { HoloCardRootProps }        from "./types";
+export type { HoloCardRootChildContext } from "./types";
+export type { HolographicEffectState }   from "./types";
+export type { SpringConfig }             from "./types";
